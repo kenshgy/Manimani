@@ -19,7 +19,6 @@
   </v-app-bar>
 </template>
 <script setup lang="ts">
-import { getAuth } from 'firebase/auth'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { mdiAccount } from '@mdi/js'
@@ -41,14 +40,5 @@ const items = [
   },
 ]
 
-onMounted(() => {
-  const auth = getAuth()
-  auth.onAuthStateChanged((user) => {
-    if (user) {
-      status.value = 'ようこそ ' + user.email
-    } else {
-      status.value = ''
-    }
-  })
-})
+onMounted(() => {})
 </script>

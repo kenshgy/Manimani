@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getAuth, type User } from 'firebase/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,33 +61,5 @@ const router = createRouter({
   ],
 })
 
-const getCurrentUser = (): Promise<User | null> => {
-  return new Promise((resolve) => {
-    const unsubscribe = getAuth().onAuthStateChanged(
-      (user) => {
-        unsubscribe()
-        resolve(user)
-      },
-      (error) => {
-        console.error('Authentication error:', error)
-        unsubscribe()
-        resolve(null) // Treat errors as not logged in
-      },
-    )
-  })
-}
-
-router.beforeEach(async (to, from, next) => {
-  if (to.meta.requiresAuth) {
-    const user = await getCurrentUser()
-    if (!user) {
-      next('/login')
-    } else {
-      next()
-    }
-  } else {
-    next()
-  }
-})
 
 export default router

@@ -54,18 +54,6 @@
 
 <script setup lang="ts">
 import { ref as vueRef, onMounted, onUnmounted, watch } from 'vue'
-import {
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  where,
-  getDoc,
-  doc,
-} from 'firebase/firestore'
-import { db, auth } from '../firebase'
-import { getStorage, uploadBytes, getDownloadURL, ref } from 'firebase/storage'
 
 interface Message {
   id: string
@@ -86,88 +74,12 @@ const channels = vueRef([
 ])
 const selectedImage = vueRef<string | null>(null)
 const imageFile = vueRef<File | null>(null)
-const storage = getStorage()
 
 const postMessage = async () => {
   if (newMessage.value.trim() === '' && imageFile.value === null) return
-
-  try {
-    if (auth.currentUser) {
-      let imageUrl = null
-
-      if (imageFile.value) {
-        const storageRef = ref(storage, `images/${auth.currentUser.uid}/${imageFile.value.name}`)
-        await uploadBytes(storageRef, imageFile.value)
-        imageUrl = await getDownloadURL(storageRef)
-      }
-
-      await addDoc(collection(db, 'messages'), {
-        text: newMessage.value,
-        channel: selectedChannel.value,
-        username: auth.currentUser.displayName || 'Anonymous',
-        userId: auth.currentUser.uid,
-        timestamp: new Date(),
-        imageUrl: imageUrl,
-      })
-      newMessage.value = ''
-      selectedImage.value = null
-      imageFile.value = null
-    } else {
-      console.error('No user logged in')
-    }
-  } catch (error) {
-    console.error('Error adding message:', error)
-  }
 }
 
-const getMessages = async () => {
-  const q = query(
-    collection(db, 'messages'),
-    where('channel', '==', selectedChannel.value),
-    orderBy('timestamp', 'desc'),
-  )
-
-  const unsubscribe = onSnapshot(q, async (querySnapshot) => {
-    messages.value = await Promise.all(
-      querySnapshot.docs.map(async (messageDoc) => {
-        const data = messageDoc.data()
-        const userId = data ? data.userId : null
-        const userDoc = userId ? await getDoc(doc(db, 'profiles', userId)) : null
-        const userData = userDoc ? userDoc.data() : null
-        const username = (
-          userDoc &&
-          userData &&
-          typeof userData === 'object' &&
-          userData !== null &&
-          'nickname' in userData &&
-          userData.nickname !== ''
-            ? userData.nickname
-            : 'Anonymous'
-        ) as string
-        return {
-          id: messageDoc.id,
-          text: data.text,
-          username: username,
-          userId: userId,
-          timestamp: data.timestamp?.toDate(),
-          imageUrl: data.imageUrl,
-        }
-      }),
-    )
-  })
-
-  onUnmounted(() => {
-    unsubscribe()
-  })
-}
-
-onMounted(() => {
-  getMessages()
-})
-
-watch(selectedChannel, () => {
-  getMessages()
-})
+const getMessages = async () => {}
 </script>
 
 <style scoped></style>

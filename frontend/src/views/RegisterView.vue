@@ -118,12 +118,8 @@ import { mdiEye } from '@mdi/js'
 import { mdiEyeOff } from '@mdi/js'
 import { mdiLockOutline } from '@mdi/js'
 import { mdiEmailOutline } from '@mdi/js'
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import { useRouter } from 'vue-router'
-import { signInWithGoogle } from '@/firebase'
 import GoogleIcon from '@/components/GoogleIcon.vue'
-import { createUserProfile } from '@/utils/auth'
-import { FirebaseError } from 'firebase/app'
 import PrivacyPolycy from '@/components/dialogs/PrivacyPolycy.vue'
 import TermsOfService from '@/components/dialogs/TermsOfService.vue'
 
@@ -154,43 +150,7 @@ const rules = {
   passwordMatch: (value: string) => value === password.value || 'パスワードが一致しません',
 }
 
-const register = async () => {
-  try {
-    const auth = getAuth()
-    const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value)
-    const userId = userCredential.user.uid
+const register = async () => {}
 
-    await createUserProfile(userId)
-
-    message.value = '会員登録が完了しました！'
-    router.push('/account')
-    console.log('User registered successfully!')
-  } catch (error: unknown) {
-    if (error instanceof FirebaseError && error.code === 'auth/email-already-in-use') {
-      message.value = 'このメールアドレスはすでに登録されています。'
-    } else {
-      message.value = '会員登録に失敗しました。お問い合わせください。'
-      console.error(error as Error)
-    }
-  }
-}
-
-const googleRegister = async () => {
-  try {
-    const user = await signInWithGoogle()
-    if (user) {
-      const userId = user.uid
-
-      await createUserProfile(userId)
-
-      message.value = '会員登録が完了しました！'
-      router.push('/account')
-      console.log('User registered successfully!')
-    } else {
-      message.value = 'Google ログインに失敗しました。'
-    }
-  } catch {
-    message.value = '会員登録に失敗しました。お問い合わせください。'
-  }
-}
+const googleRegister = async () => {}
 </script>

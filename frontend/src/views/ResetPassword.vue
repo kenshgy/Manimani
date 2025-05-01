@@ -25,15 +25,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { sendPasswordResetEmail } from 'firebase/auth'
-import { auth } from '../firebase'
 import { mdiEmailOutline } from '@mdi/js'
 
 const email = ref('')
 
 const resetPassword = async () => {
   try {
-    await sendPasswordResetEmail(auth, email.value)
     alert('パスワードリセットメールを送信しました。')
   } catch (error) {
     console.error('パスワードリセットエラー:', error)

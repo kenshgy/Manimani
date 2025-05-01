@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { collection, getDocs, QueryDocumentSnapshot, getDoc, doc } from 'firebase/firestore'
-import type { DocumentData } from 'firebase/firestore'
-import { db } from '../firebase'
 import type { ProfileType } from '../types/ProfileType'
 import type { AddressType } from '../types/AddressType'
 
@@ -21,35 +18,6 @@ interface User {
 const users = ref<User[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
-
-onMounted(async () => {
-  try {
-    const querySnapshot = await getDocs(collection(db, 'profiles'))
-    users.value = await Promise.all(
-      querySnapshot.docs.map(async (profileDoc: QueryDocumentSnapshot<DocumentData>) => {
-        const profileData = profileDoc.data() as ProfileType
-        const addressDoc = await getDoc(doc(db, 'addresses', profileDoc.id))
-        const addressData = addressDoc.data() as AddressType
-
-        return {
-          id: profileDoc.id,
-          nickname: profileData?.nickname || '',
-          firstName: profileData?.firstName || '',
-          familyName: profileData?.familyName || '',
-          postalCode: addressData?.postalCode || '',
-          prefecture: addressData?.prefecture || '',
-          city: addressData?.city || '',
-          street: addressData?.street || '',
-          division: addressData?.division || '',
-        }
-      }),
-    )
-  } catch (e: unknown) {
-    error.value = (e as Error).message
-  } finally {
-    loading.value = false
-  }
-})
 </script>
 <template>
   <v-container>

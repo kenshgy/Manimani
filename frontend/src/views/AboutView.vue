@@ -15,32 +15,10 @@
 </template>
 
 <script setup lang="ts">
-import { getAuth } from 'firebase/auth'
 import { onMounted, ref } from 'vue'
 
 const message = ref('')
-function logout() {
-  const auth = getAuth()
-  auth
-    .signOut()
-    .then(() => {
-      message.value = 'ログアウトしました。'
-    })
-    .catch((error) => {
-      console.error('Logout error:', error)
-    })
-}
-
-onMounted(() => {
-  const auth = getAuth()
-  auth.onAuthStateChanged((user) => {
-    if (user) {
-      message.value = 'ログイン中: ' + user.email
-    } else {
-      message.value = 'ログインしていません。'
-    }
-  })
-})
+function logout() {}
 </script>
 <style>
 @media (min-width: 1024px) {

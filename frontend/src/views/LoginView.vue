@@ -65,10 +65,7 @@ import { mdiEye } from '@mdi/js'
 import { mdiEyeOff } from '@mdi/js'
 import { mdiLockOutline } from '@mdi/js'
 import { mdiEmailOutline } from '@mdi/js'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../firebase'
 import { useRouter } from 'vue-router'
-import { signInWithGoogle } from '../firebase'
 import GoogleIcon from '../components/GoogleIcon.vue'
 
 const router = useRouter()
@@ -78,7 +75,6 @@ const visible = ref(false)
 
 const googleLogin = async () => {
   try {
-    await signInWithGoogle()
     router.push('/account')
   } catch (error) {
     console.error(error)
@@ -87,7 +83,6 @@ const googleLogin = async () => {
 
 const login = async () => {
   try {
-    await signInWithEmailAndPassword(auth, email.value, password.value)
     router.push('/account')
   } catch (error) {
     console.log(error)

@@ -100,10 +100,6 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { db } from '../firebase'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { getAuth, type User } from 'firebase/auth'
-import { logout } from '../firebase'
 import { useRouter } from 'vue-router'
 import type { ProfileType } from '../types/ProfileType'
 import type { AddressType } from '../types/AddressType'
@@ -174,81 +170,8 @@ const prefectures = [
   { label: '沖縄県', value: 'okinawa' },
 ]
 
-const saveProfile = async () => {
-  const user = await getCurrentUser()
-  if (user) {
-    try {
-      await setDoc(doc(db, 'profiles', user.uid), {
-        familyName: profile.familyName,
-        firstName: profile.firstName,
-        phoneNumber: profile.phoneNumber,
-        nickname: profile.nickname,
-      })
-      await setDoc(doc(db, 'addresses', user.uid), {
-        postalCode: address.postalCode,
-        prefecture: address.prefecture,
-        city: address.city,
-        street: address.street,
-        division: address.division,
-      })
-
-      alert('プロフィールが保存されました。')
-    } catch (error) {
-      console.error('エラーが発生しました: ', error)
-      alert('プロフィールの保存中にエラーが発生しました。')
-    }
-  } else {
-    alert('ユーザーがログインしていません。')
-  }
-}
-
-const getCurrentUser = (): Promise<User | null> => {
-  return new Promise((resolve, reject) => {
-    // Added reject to the promise
-    const unsubscribe = getAuth().onAuthStateChanged(
-      (user) => {
-        unsubscribe()
-        resolve(user)
-      },
-      (error) => {
-        console.error('Authentication error:', error)
-        unsubscribe()
-        reject(error)
-      },
-    )
-  })
-}
-
-onMounted(async () => {
-  const user = await getCurrentUser()
-  if (user) {
-    const userDoc = await getDoc(doc(db, 'profiles', user.uid))
-    if (userDoc.exists()) {
-      console.log(userDoc.data())
-      const userData = userDoc.data()
-      profile.familyName = userData.familyName
-      profile.firstName = userData.firstName
-      profile.phoneNumber = userData.phoneNumber
-      profile.nickname = userData.nickname
-    } else {
-      console.log('No such document in users collection!')
-    }
-
-    const addressDoc = await getDoc(doc(db, 'addresses', user.uid))
-    if (addressDoc.exists()) {
-      const addressData = addressDoc.data()
-      address.postalCode = addressData.postalCode
-      address.prefecture = addressData.prefecture
-      address.city = addressData.city
-      address.street = addressData.street
-      address.division = addressData.division
-    } else {
-      console.log('No such document in addresses collection!')
-    }
-  } else {
-    message.value = 'ユーザーが見つかりません'
-  }
-})
+const logout = (router: unknown) => {}
+const saveProfile = async () => {}
 </script>
 
 <style scoped></style>

@@ -1,5 +1,6 @@
-<script setup lang="ts">
+<script setup>
 import { RouterView } from 'vue-router'
+import { supabase } from './utils/supabase'
 </script>
 
 <template>

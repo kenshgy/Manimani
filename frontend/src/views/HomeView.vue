@@ -1,85 +1,70 @@
-]
 <template>
-  <v-container>
-    <v-tabs v-model="selectedChannel">
-      <v-tab v-for="channel in channels" :key="channel.value" :value="channel.value">
-        {{ channel.name }}
-      </v-tab>
-    </v-tabs>
+  <v-container class="py-0" fluid>
+    <!-- ツイート投稿フォーム -->
+    <v-card class="pa-4 mb-4">
+      <v-textarea v-model="newTweet" label="いまどうしてる？" auto-grow outlined hide-details />
+      <v-btn color="primary" class="mt-2" @click="postTweet">ポスト</v-btn>
+    </v-card>
 
-    <v-row>
-      <v-col cols="12" class="mt-4 pb-0">
-        <v-textarea
-          v-model="newMessage"
-          label="Write your message"
-          variant="outlined"
-          density="compact"
-          rows="3"
-        ></v-textarea>
-        <!-- <v-img v-if="selectedImage" :src="selectedImage" max-height="200" contain /> -->
-      </v-col>
-      <!-- <v-col cols="6" class="py-0">
-        <v-btn :icon="mdiImage" variant="plain" @click="openFilePicker"></v-btn>
-        <input type="file" accept="image/*" hidden @change="handleImageUpload" ref="fileInput" />
-      </v-col> -->
-      <v-col></v-col>
-      <v-spacer></v-spacer>
-      <v-col cols="3" class="py-0">
-        <v-btn color="primary" @click="postMessage" block variant="plain">Post</v-btn>
-      </v-col>
-    </v-row>
-    <v-row class="mt-2">
-      <v-col cols="12" v-for="message in messages" :key="message.id">
-        <v-row>
-          <v-col cols="12" class="pt-0">
-            <v-divider></v-divider>
-          </v-col>
-          <v-col cols="6">
-            {{ message.username }}
-          </v-col>
-          <v-col cols="6">
-            <small>
-              {{ new Date(message.timestamp).toLocaleDateString('en-US') }}
-            </small>
-          </v-col>
-          <v-col>
-            {{ message.text }}
-            <v-img v-if="message.imageUrl" :src="message.imageUrl" max-height="200" contain />
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
+    <!-- ツイート一覧 -->
+    <v-card v-for="tweet in tweets" :key="tweet.id" class="mb-4">
+      <v-card-title>{{ tweet.user_name }}</v-card-title>
+      <v-card-text>{{ tweet.text }}</v-card-text>
+      <v-card-subtitle class="text-caption text-right">
+        {{ formatDate(tweet.created_at) }}
+      </v-card-subtitle>
+    </v-card>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref as vueRef, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
+import { supabase } from '@/utils/supabase'
 
-interface Message {
-  id: string
-  text: string
-  username: string
-  userId: string
-  timestamp: Date
-  imageUrl?: string
+const tweets = ref<Array<{ id: number; text: string; created_at: string; user_name: string }>>([])
+const newTweet = ref('')
+
+const fetchTweets = async () => {
+  const { data, error } = await supabase
+    .from('tweets')
+    .select('id, text, created_at, user_name')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('ツイートの取得に失敗しました:', error)
+  } else {
+    tweets.value = data || []
+  }
 }
 
-const newMessage = vueRef('')
-const selectedChannel = vueRef('general')
-const messages = vueRef<Message[]>([])
-const channels = vueRef([
-  { name: '一般', value: 'general' },
-  { name: '門前', value: 'monzen' },
-  { name: 'ランダム', value: 'random' },
-])
-const selectedImage = vueRef<string | null>(null)
-const imageFile = vueRef<File | null>(null)
+const postTweet = async () => {
+  if (!newTweet.value.trim()) return
 
-const postMessage = async () => {
-  if (newMessage.value.trim() === '' && imageFile.value === null) return
+  const { error } = await supabase.from('tweets').insert([
+    {
+      text: newTweet.value,
+      user_name: 'ユーザー名', // 実際にはログインユーザーの名前を使用
+    },
+  ])
+
+  if (error) {
+    console.error('ツイートの投稿に失敗しました:', error)
+  } else {
+    newTweet.value = ''
+    await fetchTweets()
+  }
 }
 
-const getMessages = async () => {}
+const formatDate = (datetime: string): string => {
+  const date = new Date(datetime)
+  return date.toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+onMounted(fetchTweets)
 </script>
-
-<style scoped></style>

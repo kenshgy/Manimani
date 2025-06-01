@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { SignUpFormData } from '@/types';
 
 export default function SignUp() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SignUpFormData>({
     name: '',
     email: '',
     password: '',

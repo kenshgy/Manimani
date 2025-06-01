@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prod": "NODE_ENV=production next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
+    "@types/dotenv": "^6.1.1",
+    "dotenv": "^16.5.0",
     "next": "15.1.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

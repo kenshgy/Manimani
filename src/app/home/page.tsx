@@ -4,32 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-
-interface Profile {
-  id: string;
-  name: string | null;
-  username: string;
-  avatar_url: string | null;
-}
-
-interface Hashtag {
-  id: string;
-  name: string;
-}
-
-interface Tweet {
-  id: string;
-  content: string;
-  image_url: string | null;
-  created_at: string;
-  user_id: string;
-  profile: Profile;
-  hashtags: Hashtag[];
-  author_name: string;
-  author_username: string;
-  author_avatar: string;
-  timestamp: string;
-}
+import { Hashtag, Tweet } from '@/types';
 
 export default function Home() {
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -43,6 +18,13 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    // 環境情報の出力
+    console.log('環境情報:', {
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      // 機密情報は出力しない
+    });
+
     // 初期ロード時にセッションを確認
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -112,6 +94,7 @@ export default function Home() {
         content: tweet.content,
         image_url: tweet.image_url,
         created_at: tweet.created_at,
+        updated_at: tweet.updated_at,
         user_id: tweet.user_id,
         profile: tweet.profile,
         hashtags: tweet.hashtags,
@@ -119,7 +102,7 @@ export default function Home() {
         author_username: tweet.profile.username,
         author_avatar: tweet.profile.avatar_url || '/images/default-avatar.png',
         timestamp: new Date(tweet.created_at).toLocaleString('ja-JP')
-      }));
+      })) as Tweet[];
 
       setTweets(formattedTweets);
     } catch (error) {

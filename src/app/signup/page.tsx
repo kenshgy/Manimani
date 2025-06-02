@@ -3,25 +3,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { SignUpFormData } from '@/types';
 
 export default function SignUp() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
-  const [formData, setFormData] = useState<SignUpFormData>({
-    name: '',
+  const [formData, setFormData] = useState({
     email: '',
     password: '',
     passwordConfirm: '',
     terms: false,
-    prefecture: '',
-    city: '',
-    street: '',
-    postal_code: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -32,10 +27,6 @@ export default function SignUp() {
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) {
-      setError('お名前を入力してください');
-      return false;
-    }
     if (!formData.email.trim()) {
       setError('メールアドレスを入力してください');
       return false;
@@ -74,7 +65,6 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-      // ユーザー登録
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -83,35 +73,11 @@ export default function SignUp() {
       if (authError) throw authError;
 
       if (authData.user) {
-        // プロフィール作成（anon権限で作成）
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,  // signUpのレスポンスから直接IDを取得
-            name: formData.name,
-            username: formData.email.split('@')[0],
-            email: formData.email,
-            avatar_url: null,
-            prefecture: formData.prefecture,
-            city: formData.city,
-            street: formData.street,
-            postal_code: formData.postal_code,
-            updated_at: new Date().toISOString()
-          });
-
-        if (profileError) throw profileError;
-
-        // セッションを確実に確立
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-
-        if (session) {
-          // 登録成功後、ホームページにリダイレクト
-          router.push('/home');
-        } else {
-          setError('セッションの確立に失敗しました。ログインしてください。');
+        setSuccess(true);
+        // 3秒後にログインページに遷移
+        setTimeout(() => {
           router.push('/login');
-        }
+        }, 3000);
       }
     } catch (error: unknown) {
       console.error('登録エラー:', error);
@@ -124,6 +90,44 @@ export default function SignUp() {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-md mx-auto">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center">
+              <div className="mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                確認メールを送信しました
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                {formData.email} 宛に確認メールを送信しました。
+              </p>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                メールに記載されているリンクをクリックして、アカウントの確認を完了してください。
+              </p>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  メールが届かない場合は、迷惑メールフォルダをご確認ください。
+                </p>
+                <a
+                  href="/login"
+                  className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+                >
+                  ログインページへ移動
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -140,21 +144,6 @@ export default function SignUp() {
 
           <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  お名前
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="山田 太郎"
-                />
-              </div>
-
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   メールアドレス
@@ -235,70 +224,6 @@ export default function SignUp() {
                       </svg>
                     )}
                   </button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">住所情報</h3>
-                
-                <div>
-                  <label htmlFor="postal_code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    郵便番号
-                  </label>
-                  <input
-                    type="text"
-                    id="postal_code"
-                    name="postal_code"
-                    value={formData.postal_code}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="105-0011"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    都道府県
-                  </label>
-                  <input
-                    type="text"
-                    id="prefecture"
-                    name="prefecture"
-                    value={formData.prefecture}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="東京都"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    市区町村
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="港区"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="street" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    番地・建物名
-                  </label>
-                  <input
-                    type="text"
-                    id="street"
-                    name="street"
-                    value={formData.street}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="芝公園4-2-8"
-                  />
                 </div>
               </div>
 

@@ -15,15 +15,12 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // 環境情報の出力
-    console.log('環境情報:', {
-      NODE_ENV: process.env.NODE_ENV,
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      // 機密情報は出力しない
-    });
 
     // 初期ロード時にセッションを確認
     const checkSession = async () => {
@@ -118,6 +115,27 @@ export default function Home() {
     fetchTweets(hashtagId);
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB制限
+        setError('画像サイズは5MB以下にしてください');
+        return;
+      }
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAuthenticated) {
@@ -135,6 +153,34 @@ export default function Home() {
       if (userError) throw userError;
       if (!user) throw new Error('Not authenticated');
 
+      let imageUrl = null;
+
+      // 画像がある場合はアップロード
+      if (selectedImage) {
+        try {
+          const fileExt = selectedImage.name.split('.').pop();
+          const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from('images')
+            .upload(fileName, selectedImage);
+
+          if (uploadError) {
+            console.error('画像アップロードエラー:', uploadError);
+            throw new Error('画像のアップロードに失敗しました');
+          }
+
+          // 画像のURLを取得
+          const { data: { publicUrl } } = supabase.storage
+            .from('images')
+            .getPublicUrl(fileName);
+
+          imageUrl = publicUrl;
+        } catch (error) {
+          console.error('画像処理エラー:', error);
+          throw new Error('画像の処理に失敗しました');
+        }
+      }
+
       // ハッシュタグを抽出
       const hashtagMatches = newTweet.match(/#[\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+/g) || [];
       const hashtagNames = hashtagMatches.map(tag => tag.slice(1));
@@ -144,7 +190,8 @@ export default function Home() {
         .from('tweets')
         .insert([{
           content: newTweet,
-          user_id: user.id
+          user_id: user.id,
+          image_url: imageUrl
         }])
         .select()
         .single();
@@ -189,6 +236,8 @@ export default function Home() {
       }
 
       setNewTweet('');
+      setSelectedImage(null);
+      setImagePreview(null);
       setError(null);
       fetchTweets();
     } catch (error) {
@@ -208,7 +257,7 @@ export default function Home() {
   };
 
   const handleProfileClick = () => {
-    router.push('/profile');
+    router.push('/profile/edit');
   };
 
   const handleLoginClick = () => {
@@ -225,6 +274,35 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* 画像拡大表示用モーダル */}
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75"
+          onClick={() => setExpandedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full h-full p-4">
+            <button
+              onClick={() => setExpandedImage(null)}
+              className="absolute top-4 right-4 text-white hover:text-gray-300"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="relative w-full h-full">
+              <Image
+                src={expandedImage}
+                alt="Expanded image"
+                fill
+                sizes="(max-width: 1024px) 100vw, 1024px"
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* メニューボタン */}
       <div className="fixed top-4 right-4 z-50">
         <div className="relative">
@@ -322,7 +400,42 @@ export default function Home() {
                 className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
                 rows={3}
               />
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      id="tweet-image-upload"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('tweet-image-upload')?.click()}
+                      className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      tabIndex={0}
+                      aria-label="画像をアップロード"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600 dark:text-blue-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                      </svg>
+                    </button>
+                  </label>
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      tabIndex={0}
+                      aria-label="画像を削除"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-red-600 dark:text-red-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 <button
                   type="submit"
                   disabled={!newTweet.trim()}
@@ -331,6 +444,17 @@ export default function Home() {
                   ツイートする
                 </button>
               </div>
+              {imagePreview && (
+                <div className="relative aspect-video w-full">
+                  <Image
+                    src={imagePreview}
+                    alt="Preview"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 768px"
+                    className="rounded-lg object-cover"
+                  />
+                </div>
+              )}
             </form>
             {error && (
               <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg">
@@ -393,8 +517,9 @@ export default function Home() {
                         alt="Tweet image"
                         fill
                         sizes="(max-width: 768px) 100vw, 768px"
-                        className="rounded-lg object-cover"
+                        className="rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
                         priority={tweets.indexOf(tweet) === 0}
+                        onClick={() => setExpandedImage(tweet.image_url)}
                       />
                     </div>
                   )}

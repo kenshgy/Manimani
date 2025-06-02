@@ -20,7 +20,11 @@ export default function Login() {
     const result = await loginWithEmailAndPassword({ email, password });
     
     if (result.success) {
-      router.push('/home');
+      if (result.needsProfile) {
+        router.push('/profile/create');
+      } else {
+        router.push('/home');
+      }
     } else {
       setError(result.error || 'ログインに失敗しました');
     }

@@ -15,9 +15,9 @@ ON CONFLICT (id) DO NOTHING;
 -- サンプルユーザーの作成（既に存在する場合はスキップ）
 INSERT INTO profiles (id, name, username, avatar_url, bio, created_at)
 VALUES
-  ('00000000-0000-0000-0000-000000000001', '山田太郎', 'yamada_taro', '/images/default-avatar.png', 'プログラマーです。', NOW()),
-  ('00000000-0000-0000-0000-000000000002', '佐藤花子', 'sato_hanako', '/images/default-avatar.png', 'デザイナーです。', NOW()),
-  ('00000000-0000-0000-0000-000000000003', '鈴木一郎', 'suzuki_ichiro', '/images/default-avatar.png', 'エンジニアです。', NOW())
+  ('00000000-0000-0000-0000-000000000001', '山田太郎', 'yamada_taro', '/logo.svg', 'プログラマーです。', NOW()),
+  ('00000000-0000-0000-0000-000000000002', '佐藤花子', 'sato_hanako', '/logo.svg', 'デザイナーです。', NOW()),
+  ('00000000-0000-0000-0000-000000000003', '鈴木一郎', 'suzuki_ichiro', '/logo.svg', 'エンジニアです。', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- ハッシュタグの追加

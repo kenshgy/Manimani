@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.49.8",
     "@types/dotenv": "^6.1.1",
     "dotenv": "^16.5.0",

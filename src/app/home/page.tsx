@@ -819,10 +819,6 @@ export default function Home() {
                       {tweet.author_name}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      @{tweet.author_username}
-                    </p>
-                    <span className="text-gray-500 dark:text-gray-400">·</span>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {tweet.timestamp}
                     </p>
                   </div>

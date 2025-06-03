@@ -399,7 +399,6 @@ export default function CreateProfile() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   value={formData.prefecture}
                   onChange={(e) => setFormData({ ...formData, prefecture: e.target.value })}
-                  required
                   disabled={loading}
                 />
               </div>
@@ -414,7 +413,6 @@ export default function CreateProfile() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  required
                   disabled={loading}
                 />
               </div>
@@ -429,7 +427,6 @@ export default function CreateProfile() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   value={formData.street}
                   onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                  required
                   disabled={loading}
                 />
               </div>
@@ -444,7 +441,6 @@ export default function CreateProfile() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   value={formData.postal_code}
                   onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                  required
                   disabled={loading}
                 />
               </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
+import CommunitySelector from '@/components/CommunitySelector';
 
 export default function CreateProfile() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function CreateProfile() {
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [step, setStep] = useState<'profile' | 'community'>('profile');
 
   // ユーザー名の重複チェック
   const checkUsername = async (username: string) => {
@@ -88,7 +90,6 @@ export default function CreateProfile() {
     e.preventDefault();
     setError(null);
 
-    // ユーザー名の重複チェック
     if (usernameError) {
       setError('ユーザー名が重複しています');
       return;
@@ -105,7 +106,6 @@ export default function CreateProfile() {
 
       let avatarUrl = '/logo.svg';
 
-      // 画像がある場合はアップロード
       if (selectedImage) {
         try {
           const fileExt = selectedImage.name.split('.').pop();
@@ -119,7 +119,6 @@ export default function CreateProfile() {
             throw new Error('画像のアップロードに失敗しました');
           }
 
-          // 画像のURLを取得
           const { data: { publicUrl } } = supabase.storage
             .from('images')
             .getPublicUrl(fileName);
@@ -150,13 +149,53 @@ export default function CreateProfile() {
         throw profileError;
       }
 
-      router.push('/home');
+      setStep('community');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'プロフィールの作成に失敗しました');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleCommunityComplete = async (selectedHashtags: string[]) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      if (selectedHashtags.length > 0) {
+        const { error } = await supabase
+          .from('user_hashtags')
+          .insert(
+            selectedHashtags.map(hashtagId => ({
+              user_id: user.id,
+              hashtag_id: hashtagId
+            }))
+          );
+
+        if (error) throw error;
+      }
+
+      router.push('/home');
+    } catch (error) {
+      console.error('Error joining communities:', error);
+      setError('コミュニティへの参加に失敗しました');
+    }
+  };
+
+  const handleCommunitySkip = () => {
+    router.push('/home');
+  };
+
+  if (step === 'community') {
+    return (
+      <CommunitySelector
+        onComplete={handleCommunityComplete}
+        onSkip={handleCommunitySkip}
+        title="コミュニティに参加"
+        description="興味のあるコミュニティを選択してください（任意）"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">

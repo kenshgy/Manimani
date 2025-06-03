@@ -18,14 +18,20 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [showCommunityModal, setShowCommunityModal] = useState(false);
+  const [userHashtags, setUserHashtags] = useState<string[]>([]);
+  const [tempSelectedHashtags, setTempSelectedHashtags] = useState<string[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-
     // 初期ロード時にセッションを確認
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
+      if (session) {
+        fetchUserHashtags();
+      }
     };
     checkSession();
 
@@ -33,6 +39,9 @@ export default function Home() {
       setIsAuthenticated(!!session);
       if (!session) {
         setNewTweet('');
+        setUserHashtags([]);
+      } else {
+        fetchUserHashtags();
       }
     });
 
@@ -43,6 +52,95 @@ export default function Home() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    setTempSelectedHashtags(userHashtags);
+  }, [userHashtags]);
+
+  useEffect(() => {
+    setHasChanges(JSON.stringify(userHashtags) !== JSON.stringify(tempSelectedHashtags));
+  }, [userHashtags, tempSelectedHashtags]);
+
+  const fetchUserHashtags = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('user_hashtags')
+        .select('hashtag_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setUserHashtags(data.map(item => item.hashtag_id));
+    } catch (error) {
+      console.error('Error fetching user hashtags:', error);
+    }
+  };
+
+  const handleJoinCommunity = (hashtagId: string) => {
+    setTempSelectedHashtags(prev => [...prev, hashtagId]);
+  };
+
+  const handleLeaveCommunity = (hashtagId: string) => {
+    setTempSelectedHashtags(prev => prev.filter(id => id !== hashtagId));
+  };
+
+  const handleApplyChanges = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // 追加するコミュニティ
+      const toAdd = tempSelectedHashtags.filter(id => !userHashtags.includes(id));
+      // 削除するコミュニティ
+      const toRemove = userHashtags.filter(id => !tempSelectedHashtags.includes(id));
+
+      // 追加処理
+      if (toAdd.length > 0) {
+        const { error: insertError } = await supabase
+          .from('user_hashtags')
+          .insert(
+            toAdd.map(hashtagId => ({
+              user_id: user.id,
+              hashtag_id: hashtagId
+            }))
+          );
+
+        if (insertError) throw insertError;
+      }
+
+      // 削除処理
+      if (toRemove.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('user_hashtags')
+          .delete()
+          .eq('user_id', user.id)
+          .in('hashtag_id', toRemove);
+
+        if (deleteError) throw deleteError;
+      }
+
+      setUserHashtags(tempSelectedHashtags);
+      setHasChanges(false);
+      setShowCommunityModal(false);
+
+      // 現在選択中のハッシュタグが削除された場合、すべてのツイートを表示
+      if (selectedHashtag && toRemove.includes(selectedHashtag)) {
+        setSelectedHashtag(null);
+        fetchTweets();
+      }
+    } catch (error) {
+      console.error('Error updating communities:', error);
+      setError('コミュニティの更新に失敗しました');
+    }
+  };
+
+  const handleCancelChanges = () => {
+    setTempSelectedHashtags([...userHashtags]);
+    setHasChanges(false);
+    setShowCommunityModal(false);
+  };
 
   const fetchHashtags = async () => {
     try {
@@ -274,6 +372,60 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* コミュニティモーダル */}
+      {showCommunityModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              コミュニティに参加
+            </h2>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {hashtags.map((hashtag) => (
+                <div
+                  key={hashtag.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <span className="text-gray-900 dark:text-white">
+                    {hashtag.name}
+                  </span>
+                  {tempSelectedHashtags.includes(hashtag.id) ? (
+                    <button
+                      onClick={() => handleLeaveCommunity(hashtag.id)}
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    >
+                      退出
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleJoinCommunity(hashtag.id)}
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                    >
+                      参加
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-end space-x-4">
+              <button
+                onClick={handleCancelChanges}
+                className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+              >
+                キャンセル
+              </button>
+              {hasChanges && (
+                <button
+                  onClick={handleApplyChanges}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+                >
+                  変更を適用
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 画像拡大表示用モーダル */}
       {expandedImage && (
         <div
@@ -328,6 +480,13 @@ export default function Home() {
                       プロフィール
                     </button>
                     <button
+                      onClick={() => setShowCommunityModal(true)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      role="menuitem"
+                    >
+                      コミュニティ
+                    </button>
+                    <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       role="menuitem"
@@ -369,19 +528,21 @@ export default function Home() {
                 >
                   すべて
                 </button>
-                {hashtags.map((hashtag) => (
-                  <button
-                    key={hashtag.id}
-                    onClick={() => handleHashtagClick(hashtag.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                      selectedHashtag === hashtag.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    #{hashtag.name}
-                  </button>
-                ))}
+                {hashtags
+                  .filter(hashtag => userHashtags.includes(hashtag.id))
+                  .map((hashtag) => (
+                    <button
+                      key={hashtag.id}
+                      onClick={() => handleHashtagClick(hashtag.id)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                        selectedHashtag === hashtag.id
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {hashtag.name}
+                    </button>
+                  ))}
               </div>
             </div>
             {/* スクロールインジケーター */}

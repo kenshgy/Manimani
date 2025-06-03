@@ -1,6 +1,6 @@
 export interface Hashtag {
   id: string;
   name: string;
-  memberCount: number;
-  created_at?: string;
+  created_at: string;
+  memberCount?: number;
 } 

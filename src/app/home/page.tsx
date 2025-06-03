@@ -680,7 +680,7 @@ export default function Home() {
                     onClick={handleLoginClick}
                     className="px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap"
                   >
-                    ログイン
+                    ログインする
                   </button>
                 ) : (
                   <>
@@ -831,7 +831,7 @@ export default function Home() {
                   </p>
                   {tweet.hashtags && tweet.hashtags.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {tweet.hashtags.map((hashtag) => (
+                      {tweet.hashtags.map((hashtag: Hashtag) => (
                         <button
                           key={hashtag.id}
                           onClick={() => handleHashtagClick(hashtag.id)}

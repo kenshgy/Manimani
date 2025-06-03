@@ -130,7 +130,7 @@ export default function CommunitySelector({
                 ))}
               </div>
 
-              {hasChanges && (
+              {!hasChanges && (
                 <div className="flex space-x-4 pt-4">
                   <button
                     onClick={handleCancelChanges}
@@ -147,7 +147,7 @@ export default function CommunitySelector({
                 </div>
               )}
 
-              <div className="flex space-x-4 pt-4">
+              {hasChanges && (<div className="flex space-x-4 pt-4">
                 <button
                   onClick={onSkip}
                   className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
@@ -160,7 +160,7 @@ export default function CommunitySelector({
                 >
                   完了
                 </button>
-              </div>
+              </div>)}
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
+import { loginWithEmailAndPassword } from '@/lib/auth';
 
 export default function Login() {
   const router = useRouter();
@@ -24,14 +25,19 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
 
-      if (error) throw error;
 
-      router.push('/home');
+      const result = await loginWithEmailAndPassword({email, password});
+      if (result.success) {
+        if (result.needsProfile) {
+          router.push('/profile/create');
+        } else {
+          router.push('/home');
+        }
+      } else {
+        setError('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+      }
+
     } catch (error) {
       console.error('ログインエラー:', error);
       setError('メールアドレスまたはパスワードが正しくありません。');

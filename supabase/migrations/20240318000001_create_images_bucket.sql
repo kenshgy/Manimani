@@ -1,6 +1,7 @@
 -- imagesバケットを作成
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('images', 'images', true);
+VALUES ('images', 'images', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- 認証済みユーザーが画像をアップロードできるようにする
 CREATE POLICY "認証済みユーザーは画像をアップロード可能"

@@ -9,6 +9,7 @@ export default function EditProfile() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     username: '',
@@ -53,6 +54,8 @@ export default function EditProfile() {
           });
           setOriginalUsername(profile.username || '');
           setAvatarUrl(profile.avatar_url);
+          // 初回ログインかどうかを判定（名前とユーザー名が空の場合）
+          setIsFirstLogin(!profile.name && !profile.username);
         }
       } catch (err) {
         console.error('プロフィール取得エラー:', err);
@@ -357,22 +360,42 @@ export default function EditProfile() {
                 />
               </div>
 
-              <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={() => router.push('/home')}
-                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
-                  disabled={loading}
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
-                  disabled={loading || !!usernameError}
-                >
-                  {loading ? '更新中...' : '更新する'}
-                </button>
+              <div className="flex justify-end space-x-4">
+                {isFirstLogin ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/home')}
+                      className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+                    >
+                      スキップ
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading || !!usernameError}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      完了
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/home')}
+                      className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+                    >
+                      変更をキャンセル
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading || !!usernameError}
+                      className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      変更を適用
+                    </button>
+                  </>
+                )}
               </div>
             </form>
           </div>

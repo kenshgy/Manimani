@@ -1,7 +1,8 @@
 -- ハッシュタグ
 create table if not exists hashtags (
-  id uuid primary key default gen_random_uuid(),
-  name text unique not null
+  id uuid primary key default uuid_generate_v4(),
+  name text unique not null,
+  created_at timestamp with time zone default timezone('utc', now())
 );
 
 -- RLSを有効化

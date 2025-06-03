@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
-import CommunitySelector from '@/components/CommunitySelector';
+import { Hashtag } from '@/types';
 
 export default function CreateProfile() {
   const router = useRouter();
@@ -23,6 +23,8 @@ export default function CreateProfile() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [step, setStep] = useState<'profile' | 'community'>('profile');
+  const [hashtags, setHashtags] = useState<Hashtag[]>([]);
+  const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
 
   // ユーザー名の重複チェック
   const checkUsername = async (username: string) => {
@@ -186,14 +188,104 @@ export default function CreateProfile() {
     router.push('/home');
   };
 
+  const fetchHashtags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hashtags')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setHashtags(data || []);
+    } catch (error) {
+      console.error('Error fetching hashtags:', error);
+      setError('ハッシュタグの取得に失敗しました');
+    }
+  };
+
+  const handleJoinCommunity = (hashtagId: string) => {
+    setSelectedHashtags(prev => [...prev, hashtagId]);
+  };
+
+  const handleLeaveCommunity = (hashtagId: string) => {
+    setSelectedHashtags(prev => prev.filter(id => id !== hashtagId));
+  };
+
+  useEffect(() => {
+    if (step === 'community') {
+      fetchHashtags();
+    }
+  }, [step]);
+
   if (step === 'community') {
     return (
-      <CommunitySelector
-        onComplete={handleCommunityComplete}
-        onSkip={handleCommunitySkip}
-        title="コミュニティに参加"
-        description="興味のあるコミュニティを選択してください（任意）"
-      />
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-md mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                コミュニティに参加
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                興味のあるコミュニティを選択してください（任意）
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+              <div className="space-y-4">
+                {error && (
+                  <div className="rounded-md bg-red-50 p-4">
+                    <div className="text-sm text-red-700">{error}</div>
+                  </div>
+                )}
+
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {hashtags.map((hashtag) => (
+                    <div
+                      key={hashtag.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    >
+                      <span className="text-gray-900 dark:text-white">
+                        {hashtag.name}
+                      </span>
+                      {selectedHashtags.includes(hashtag.id) ? (
+                        <button
+                          onClick={() => handleLeaveCommunity(hashtag.id)}
+                          className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                        >
+                          退出
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleJoinCommunity(hashtag.id)}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                        >
+                          参加
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex space-x-4 pt-4">
+                  <button
+                    onClick={handleCommunitySkip}
+                    className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+                  >
+                    スキップ
+                  </button>
+                  <button
+                    onClick={() => handleCommunityComplete(selectedHashtags)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+                  >
+                    完了
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -307,7 +399,6 @@ export default function CreateProfile() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   value={formData.prefecture}
                   onChange={(e) => setFormData({ ...formData, prefecture: e.target.value })}
-                  required
                   disabled={loading}
                 />
               </div>
@@ -322,7 +413,6 @@ export default function CreateProfile() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  required
                   disabled={loading}
                 />
               </div>
@@ -337,7 +427,6 @@ export default function CreateProfile() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   value={formData.street}
                   onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                  required
                   disabled={loading}
                 />
               </div>
@@ -352,7 +441,6 @@ export default function CreateProfile() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   value={formData.postal_code}
                   onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                  required
                   disabled={loading}
                 />
               </div>

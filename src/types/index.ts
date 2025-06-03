@@ -20,10 +20,11 @@ export interface Hashtag {
   id: string;
   name: string;
   created_at: string;
+  memberCount?: number;
 }
 
 // ツイートの型定義
-export interface Tweet {
+export type Tweet = {
   id: string;
   content: string;
   image_url: string | null;
@@ -36,7 +37,7 @@ export interface Tweet {
   author_username: string;
   author_avatar: string;
   timestamp: string;
-}
+};
 
 // フォームデータの型定義
 export interface SignUpFormData {
@@ -55,4 +56,9 @@ export interface SignUpFormData {
 export interface LoginFormData {
   email: string;
   password: string;
-} 
+}
+
+export * from './profile';
+export * from './hashtag';
+export * from './tweet';
+export * from './auth'; 

@@ -168,6 +168,19 @@ export default function Login() {
               パスワードをお忘れですか？
             </button>
           </div>
+
+          <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              アカウントをお持ちでない方はこちら
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push('/signup')}
+              className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              アカウントを作成する
+            </button>
+          </div>
         </form>
       </div>
 

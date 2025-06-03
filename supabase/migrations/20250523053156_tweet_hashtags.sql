@@ -1,23 +1,37 @@
 -- ツイートとハッシュタグの中間テーブル
-create table if not exists tweet_hashtags (
-  tweet_id uuid references tweets(id) on delete cascade,
-  hashtag_id uuid references hashtags(id) on delete cascade,
-  created_at timestamp with time zone default timezone('utc', now()),
+create table public.tweet_hashtags (
+  tweet_id uuid references public.tweets(id) on delete cascade not null,
+  hashtag_id uuid references public.hashtags(id) on delete cascade not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   primary key (tweet_id, hashtag_id)
 );
 
 -- RLSを有効化
-alter table tweet_hashtags enable row level security;
+alter table public.tweet_hashtags enable row level security;
 
 -- 既存のポリシーを削除
-drop policy if exists "tweet_hashtags_insert" on tweet_hashtags;
-drop policy if exists "tweet_hashtags_select" on tweet_hashtags;
+drop policy if exists "tweet_hashtags_insert" on public.tweet_hashtags;
+drop policy if exists "tweet_hashtags_select" on public.tweet_hashtags;
 
 -- ポリシーの作成
-create policy "tweet_hashtags_insert"
-  on tweet_hashtags for insert
-  with check (true);
+create policy "ツイートハッシュタグは誰でも参照可能"
+  on public.tweet_hashtags for select
+  using ( true );
 
-create policy "tweet_hashtags_select"
-  on tweet_hashtags for select
-  using (true); 
+create policy "ツイートハッシュタグはツイート作成者のみ作成可能"
+  on public.tweet_hashtags for insert
+  with check (
+    exists (
+      select 1 from public.tweets
+      where id = tweet_id and user_id = auth.uid()
+    )
+  );
+
+create policy "ツイートハッシュタグはツイート作成者のみ削除可能"
+  on public.tweet_hashtags for delete
+  using (
+    exists (
+      select 1 from public.tweets
+      where id = tweet_id and user_id = auth.uid()
+    )
+  ); 

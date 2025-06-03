@@ -825,19 +825,6 @@ export default function Home() {
                   <p className="mt-2 text-gray-900 dark:text-white">
                     {convertUrlsToLinks(tweet.content)}
                   </p>
-                  {tweet.hashtags && tweet.hashtags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {tweet.hashtags.map((hashtag: Hashtag) => (
-                        <button
-                          key={hashtag.id}
-                          onClick={() => handleHashtagClick(hashtag.id)}
-                          className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
-                        >
-                          #{hashtag.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                   {tweet.image_url && (
                     <div className="mt-3 relative aspect-video w-full">
                       <Image

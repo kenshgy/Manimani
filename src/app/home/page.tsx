@@ -515,34 +515,45 @@ export default function Home() {
           <div className="relative">
             <div className="overflow-x-auto scrollbar-hide">
               <div className="flex space-x-2 p-4 min-w-max">
-                <button
-                  onClick={() => {
-                    setSelectedHashtag(null);
-                    fetchTweets();
-                  }}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                    selectedHashtag === null
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  すべて
-                </button>
-                {hashtags
-                  .filter(hashtag => userHashtags.includes(hashtag.id))
-                  .map((hashtag) => (
+                {!isAuthenticated ? (
+                  <button
+                    onClick={handleLoginClick}
+                    className="px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap"
+                  >
+                    ログイン
+                  </button>
+                ) : (
+                  <>
                     <button
-                      key={hashtag.id}
-                      onClick={() => handleHashtagClick(hashtag.id)}
+                      onClick={() => {
+                        setSelectedHashtag(null);
+                        fetchTweets();
+                      }}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                        selectedHashtag === hashtag.id
+                        selectedHashtag === null
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
-                      {hashtag.name}
+                      すべて
                     </button>
-                  ))}
+                    {hashtags
+                      .filter(hashtag => userHashtags.includes(hashtag.id))
+                      .map((hashtag) => (
+                        <button
+                          key={hashtag.id}
+                          onClick={() => handleHashtagClick(hashtag.id)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                            selectedHashtag === hashtag.id
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {hashtag.name}
+                        </button>
+                      ))}
+                  </>
+                )}
               </div>
             </div>
             {/* スクロールインジケーター */}

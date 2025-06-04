@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Manimani',
     short_name: 'Manimani',
-    description: 'コミュニティベースのソーシャルメディア',
+    description: '日常のまにまに、心のまにまに',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

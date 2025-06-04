@@ -219,8 +219,8 @@ export default function Home() {
 
           {/* ハッシュタグタブ */}
           <div className="relative">
-            <div className="overflow-x-auto scrollbar-hide">
-              <div className="flex space-x-2 min-w-max pb-4">
+            <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex space-x-2 min-w-max">
                 <button
                   onClick={() => router.push('/view')}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${

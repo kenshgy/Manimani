@@ -773,7 +773,7 @@ export default function Home() {
                   disabled={!newTweet.trim()}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ツイートする
+                  つぶやく
                 </button>
               </div>
               {imagePreview && (

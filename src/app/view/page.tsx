@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { Tweet, Hashtag } from '@/types';
@@ -48,7 +48,7 @@ const convertUrlsToLinks = (text: string) => {
   return result;
 };
 
-export default function Home() {
+function ViewContent() {
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [hashtags, setHashtags] = useState<Hashtag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -300,5 +300,17 @@ export default function Home() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">読み込み中...</div>
+      </div>
+    }>
+      <ViewContent />
+    </Suspense>
   );
 } 

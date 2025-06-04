@@ -300,7 +300,7 @@ export default function EditProfile() {
                 )}
               </div>
 
-              <div>
+              {/* <div>
                 <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   都道府県
                 </label>
@@ -358,7 +358,7 @@ export default function EditProfile() {
                   required
                   disabled={loading}
                 />
-              </div>
+              </div> */}
 
               <div className="flex justify-end space-x-4">
                 {isFirstLogin ? (

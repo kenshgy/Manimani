@@ -389,7 +389,7 @@ export default function CreateProfile() {
                 )}
               </div>
 
-              <div>
+              {/* <div>
                 <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   都道府県
                 </label>
@@ -443,7 +443,7 @@ export default function CreateProfile() {
                   onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
                   disabled={loading}
                 />
-              </div>
+              </div> */}
 
               <button
                 type="submit"

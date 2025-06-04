@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import TermsModal from '@/app/components/TermsModal';
 
 export default function SignUp() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -237,12 +239,21 @@ export default function SignUp() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="terms" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                  <a href="#" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
+                  <button
+                    type="button"
+                    onClick={() => setIsTermsModalOpen(true)}
+                    className="text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                  >
                     利用規約
-                  </a>
+                  </button>
                   に同意します
                 </label>
               </div>
+
+              <TermsModal
+                isOpen={isTermsModalOpen}
+                onClose={() => setIsTermsModalOpen(false)}
+              />
 
               {error && (
                 <div className="p-4 bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg">

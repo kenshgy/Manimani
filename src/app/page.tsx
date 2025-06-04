@@ -75,7 +75,7 @@ export default function Home() {
                   最新の投稿
                 </h2>
                 <a
-                  href="/home"
+                  href="/view"
                   className="ml-4 bg-green-100 hover:bg-green-200 dark:bg-green-700 dark:hover:bg-green-600 text-green-900 dark:text-white font-semibold py-2 px-4 rounded-lg transition duration-200 text-sm"
                 >
                   ログインせずに投稿をみる

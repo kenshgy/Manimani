@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Tweet } from '@/types/index';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -53,18 +56,18 @@ export default function Home() {
           <div className="w-full max-w-md space-y-6">
             <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
               <div className="space-y-4">
-                <a
-                  href="/login"
+                <button
+                  onClick={() => router.push('/login')}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 inline-block text-center"
                 >
                   ログイン
-                </a>
-                <a
-                  href="/signup"
+                </button>
+                <button
+                  onClick={() => router.push('/signup')}
                   className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-4 rounded-lg transition duration-200 inline-block text-center"
                 >
                   アカウント作成
-                </a>
+                </button>
               </div>
             </div>
 
@@ -74,12 +77,12 @@ export default function Home() {
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   最新の投稿
                 </h2>
-                <a
-                  href="/view"
+                <button
+                  onClick={() => router.push('/view')}
                   className="ml-4 bg-green-100 hover:bg-green-200 dark:bg-green-700 dark:hover:bg-green-600 text-green-900 dark:text-white font-semibold py-2 px-4 rounded-lg transition duration-200 text-sm"
                 >
                   ログインせずに投稿をみる
-                </a>
+                </button>
               </div>
               <div className="relative h-64">
                 {loading ? (
@@ -97,12 +100,15 @@ export default function Home() {
                       >
                         <div className="flex items-start space-x-3">
                           <div className="flex-shrink-0">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                            <div className="relative w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                               {tweet.profile?.avatar_url && (
-                                <img
+                                <Image
                                   src={tweet.profile.avatar_url}
                                   alt={tweet.profile.username || ''}
-                                  className="w-full h-full object-cover"
+                                  fill
+                                  className="object-cover"
+                                  sizes="40px"
+                                  priority={index === currentIndex}
                                 />
                               )}
                             </div>

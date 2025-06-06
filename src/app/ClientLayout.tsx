@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Navigation from '@/components/Navigation';
 
 export default function ClientLayout({
   children,
@@ -52,7 +53,10 @@ export default function ClientLayout({
           </div>
         </div>
       )}
-      {children}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Navigation />
+        <main>{children}</main>
+      </div>
     </>
   );
 } 

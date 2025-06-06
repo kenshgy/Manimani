@@ -40,7 +40,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-28">
         <div className="flex flex-col items-center justify-center space-y-8">
           {/* ロゴ */}
           <div className="text-center">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import Image from 'next/image';
 
 export default function EditProfile() {
@@ -24,49 +25,46 @@ export default function EditProfile() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const { isAuthenticated, isLoading: authLoading } = useAuth(true);
 
-  // プロフィール情報の取得
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.push('/login');
-          return;
-        }
+    if (isAuthenticated) {
+      fetchProfile();
+    }
+  }, [isAuthenticated]);
 
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-        if (error) throw error;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-        if (profile) {
-          setFormData({
-            name: profile.name || '',
-            username: profile.username || '',
-            prefecture: profile.prefecture || '',
-            city: profile.city || '',
-            street: profile.street || '',
-            postal_code: profile.postal_code || '',
-          });
-          setOriginalUsername(profile.username || '');
-          setAvatarUrl(profile.avatar_url);
-          // 初回ログインかどうかを判定（名前とユーザー名が空の場合）
-          setIsFirstLogin(!profile.name && !profile.username);
-        }
-      } catch (err) {
-        console.error('プロフィール取得エラー:', err);
-        setError('プロフィールの取得に失敗しました');
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          name: data.name || '',
+          username: data.username || '',
+          prefecture: data.prefecture || '',
+          city: data.city || '',
+          street: data.street || '',
+          postal_code: data.postal_code || '',
+        });
+        setOriginalUsername(data.username || '');
+        setAvatarUrl(data.avatar_url);
+        setIsFirstLogin(!data.name && !data.username);
       }
-    };
+    } catch (err) {
+      console.error('プロフィール取得エラー:', err);
+      setError('プロフィールの取得に失敗しました');
+    }
+  };
 
-    fetchProfile();
-  }, [router]);
-
-  // ユーザー名の重複チェック
   const checkUsername = async (username: string) => {
     if (!username || username === originalUsername) {
       setUsernameError(null);
@@ -98,7 +96,6 @@ export default function EditProfile() {
     }
   };
 
-  // ユーザー名の変更を監視
   useEffect(() => {
     const timer = setTimeout(() => {
       checkUsername(formData.username);
@@ -110,7 +107,7 @@ export default function EditProfile() {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB制限
+      if (file.size > 5 * 1024 * 1024) {
         setError('画像サイズは5MB以下にしてください');
         return;
       }
@@ -148,7 +145,6 @@ export default function EditProfile() {
 
       let newAvatarUrl = avatarUrl;
 
-      // 画像がある場合はアップロード
       if (selectedImage) {
         try {
           const fileExt = selectedImage.name.split('.').pop();
@@ -162,7 +158,6 @@ export default function EditProfile() {
             throw new Error('画像のアップロードに失敗しました');
           }
 
-          // 画像のURLを取得
           const { data: { publicUrl } } = supabase.storage
             .from('images')
             .getPublicUrl(fileName);
@@ -200,9 +195,21 @@ export default function EditProfile() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">読み込み中...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-24">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -299,66 +306,6 @@ export default function EditProfile() {
                   </p>
                 )}
               </div>
-
-              {/* <div>
-                <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  都道府県
-                </label>
-                <input
-                  type="text"
-                  id="prefecture"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  value={formData.prefecture}
-                  onChange={(e) => setFormData({ ...formData, prefecture: e.target.value })}
-                  required
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  市区町村
-                </label>
-                <input
-                  type="text"
-                  id="city"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  required
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="street" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  番地
-                </label>
-                <input
-                  type="text"
-                  id="street"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  value={formData.street}
-                  onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                  required
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="postal_code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  郵便番号
-                </label>
-                <input
-                  type="text"
-                  id="postal_code"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  value={formData.postal_code}
-                  onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                  required
-                  disabled={loading}
-                />
-              </div> */}
 
               <div className="flex justify-end space-x-4">
                 {isFirstLogin ? (

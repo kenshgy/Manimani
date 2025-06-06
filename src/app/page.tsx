@@ -62,12 +62,6 @@ export default function Home() {
                 >
                   ログイン
                 </button>
-                <button
-                  onClick={() => router.push('/signup')}
-                  className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-4 rounded-lg transition duration-200 inline-block text-center"
-                >
-                  アカウント作成
-                </button>
               </div>
             </div>
 

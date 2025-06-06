@@ -204,7 +204,7 @@ function ViewContent() {
 
       <div className="max-w-2xl mx-auto p-4">
         {/* ヘッダー */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-20 mb-6 p-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {region ? `${region} の最新情報` : 'すべての最新情報'}

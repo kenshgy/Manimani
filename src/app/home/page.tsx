@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Hashtag, Tweet } from '@/types';
 import LinkifyIt from 'linkify-it';
+import { useAuth } from '@/hooks/useAuth';
 
 const linkify = new LinkifyIt({
   fuzzyLink: false,
@@ -56,52 +57,42 @@ export default function Home() {
   const [hashtags, setHashtags] = useState<Hashtag[]>([]);
   const [selectedHashtag, setSelectedHashtag] = useState<string | null>(null);
   const [newTweet, setNewTweet] = useState('');
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
-  const [showCommunityModal, setShowCommunityModal] = useState(false);
   const [userHashtags, setUserHashtags] = useState<string[]>([]);
-  const [tempSelectedHashtags, setTempSelectedHashtags] = useState<string[]>([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newHashtag, setNewHashtag] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
   const router = useRouter();
+
+  // 認証が必要なページとして設定
+  const { isAuthenticated, isLoading } = useAuth(true);
 
   useEffect(() => {
     // 初期ロード時にセッションを確認
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
       if (session) {
         fetchUserHashtags();
+        fetchTweets();
       }
     };
     checkSession();
 
+    // 認証状態の変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
       if (!session) {
         setNewTweet('');
+        setTweets([]);
         setUserHashtags([]);
-      } else {
-        fetchUserHashtags();
       }
     });
 
     fetchHashtags();
-    fetchTweets();
 
     return () => {
       subscription.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    setTempSelectedHashtags(userHashtags);
-  }, [userHashtags]);
 
   const fetchUserHashtags = async () => {
     try {
@@ -118,71 +109,6 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching user hashtags:', error);
     }
-  };
-
-  const handleJoinCommunity = (hashtagId: string) => {
-    setTempSelectedHashtags(prev => [...prev, hashtagId]);
-  };
-
-  const handleLeaveCommunity = (hashtagId: string) => {
-    setTempSelectedHashtags(prev => prev.filter(id => id !== hashtagId));
-  };
-
-  const handleApplyChanges = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // 追加するコミュニティ
-      const toAdd = tempSelectedHashtags.filter(id => !userHashtags.includes(id));
-      // 削除するコミュニティ
-      const toRemove = userHashtags.filter(id => !tempSelectedHashtags.includes(id));
-
-      // 追加処理
-      if (toAdd.length > 0) {
-        const { error: insertError } = await supabase
-          .from('user_hashtags')
-          .insert(
-            toAdd.map(hashtagId => ({
-              user_id: user.id,
-              hashtag_id: hashtagId
-            }))
-          );
-
-        if (insertError) throw insertError;
-      }
-
-      // 削除処理
-      if (toRemove.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('user_hashtags')
-          .delete()
-          .eq('user_id', user.id)
-          .in('hashtag_id', toRemove);
-
-        if (deleteError) throw deleteError;
-      }
-
-      setUserHashtags(tempSelectedHashtags);
-      setShowCommunityModal(false);
-
-      // 現在選択中のハッシュタグが削除された場合、すべてのツイートを表示
-      if (selectedHashtag && toRemove.includes(selectedHashtag)) {
-        setSelectedHashtag(null);
-        fetchTweets();
-      }
-
-      // ハッシュタグ一覧を更新
-      await fetchHashtags();
-    } catch (error) {
-      console.error('Error updating communities:', error);
-      setError('コミュニティの更新に失敗しました');
-    }
-  };
-
-  const handleCancelChanges = () => {
-    setTempSelectedHashtags([...userHashtags]);
-    setShowCommunityModal(false);
   };
 
   const fetchHashtags = async () => {
@@ -255,8 +181,6 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching tweets:', error);
       setError('ツイートの取得に失敗しました');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -400,47 +324,7 @@ export default function Home() {
     router.push('/login');
   };
 
-  const handleAddHashtag = async () => {
-    try {
-      setIsAdding(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data: newHashtagData, error: createHashtagError } = await supabase
-        .from('hashtags')
-        .insert([{ name: newHashtag }])
-        .select()
-        .single();
-
-      if (createHashtagError) throw createHashtagError;
-
-      const { error: relationError } = await supabase
-        .from('user_hashtags')
-        .insert([{
-          user_id: user.id,
-          hashtag_id: newHashtagData.id
-        }]);
-
-      if (relationError) throw relationError;
-
-      setUserHashtags(prev => [...prev, newHashtagData.id]);
-      setShowAddModal(false);
-      setNewHashtag('');
-      setError(null);
-      
-      // コミュニティ一覧を更新
-      await fetchHashtags();
-      // ツイート一覧も更新
-      fetchTweets();
-    } catch (error) {
-      console.error('Error adding hashtag:', error);
-      setError('コミュニティの追加に失敗しました');
-    } finally {
-      setIsAdding(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-gray-600 dark:text-gray-400">読み込み中...</div>
@@ -448,164 +332,44 @@ export default function Home() {
     );
   }
 
+  if (!isAuthenticated) {
+    return null; // useAuthフックがリダイレクトを処理するため、ここでは何も返さない
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* コミュニティモーダル */}
-      {showCommunityModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                コミュニティに参加
-              </h2>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
+      <div className="max-w-2xl mx-auto p-4 pt-8">
+        {/* 画像拡大表示用モーダル */}
+        {expandedImage && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75"
+            onClick={() => setExpandedImage(null)}
+          >
+            <div className="relative max-w-4xl max-h-[90vh] w-full h-full p-4">
               <button
-                onClick={() => setShowAddModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+                onClick={() => setExpandedImage(null)}
+                className="absolute top-4 right-4 text-white hover:text-gray-300"
               >
-                コミュニティを追加
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            </div>
-            <div className="space-y-4">
-              {error && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <div className="text-sm text-red-700">{error}</div>
-                </div>
-              )}
-
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {hashtags.map((hashtag) => (
-                  <div
-                    key={hashtag.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-900 dark:text-white">
-                        #{hashtag.name}
-                      </span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {hashtag.memberCount}人参加
-                      </span>
-                    </div>
-                    {tempSelectedHashtags.includes(hashtag.id) ? (
-                      <button
-                        onClick={() => handleLeaveCommunity(hashtag.id)}
-                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                      >
-                        退出
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleJoinCommunity(hashtag.id)}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                      >
-                        参加
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* コミュニティ追加モーダル */}
-              {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                      新しいコミュニティを作成
-                    </h2>
-                    <div className="space-y-4">
-                      <div>
-                        <label htmlFor="newHashtag" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          コミュニティ名
-                        </label>
-                        <input
-                          type="text"
-                          id="newHashtag"
-                          value={newHashtag}
-                          onChange={(e) => setNewHashtag(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="コミュニティ名を入力"
-                          disabled={isAdding}
-                        />
-                      </div>
-                      <div className="flex justify-end space-x-4">
-                        <button
-                          onClick={() => {
-                            setShowAddModal(false);
-                            setNewHashtag('');
-                            setError(null);
-                          }}
-                          className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
-                          disabled={isAdding}
-                        >
-                          キャンセル
-                        </button>
-                        <button
-                          onClick={handleAddHashtag}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={isAdding || !newHashtag.trim()}
-                        >
-                          {isAdding ? '追加中...' : '追加'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex space-x-4 pt-4">
-                <button
-                  onClick={handleCancelChanges}
-                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
-                >
-                  変更をキャンセル
-                </button>
-                <button
-                  onClick={handleApplyChanges}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
-                >
-                  変更を適用
-                </button>
+              <div className="relative w-full h-full">
+                <Image
+                  src={expandedImage}
+                  alt="Expanded image"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 1024px"
+                  className="object-contain"
+                  priority
+                />
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 画像拡大表示用モーダル */}
-      {expandedImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75"
-          onClick={() => setExpandedImage(null)}
-        >
-          <div className="relative max-w-4xl max-h-[90vh] w-full h-full p-4">
-            <button
-              onClick={() => setExpandedImage(null)}
-              className="absolute top-4 right-4 text-white hover:text-gray-300"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div className="relative w-full h-full">
-              <Image
-                src={expandedImage}
-                alt="Expanded image"
-                fill
-                sizes="(max-width: 1024px) 100vw, 1024px"
-                className="object-contain"
-                priority
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* メニューボタン */}
-    
-
-      <div className="max-w-2xl mx-auto p-4">
         {/* ハッシュタグタブ */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 sticky top-20 z-40">
           <div className="relative">
             <div className="overflow-x-auto scrollbar-hide">
               <div className="flex space-x-2 p-4 min-w-max">

@@ -209,12 +209,6 @@ function ViewContent() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {region ? `${region} の最新情報` : 'すべての最新情報'}
             </h1>
-            <button
-              onClick={() => router.push('/login')}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-            >
-              ログイン
-            </button>
           </div>
 
           {/* ハッシュタグタブ */}

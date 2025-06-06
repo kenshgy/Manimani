@@ -59,7 +59,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
@@ -397,20 +396,6 @@ export default function Home() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      router.push('/');
-    } catch (error) {
-      console.error('ログアウトエラー:', error);
-    }
-  };
-
-  const handleProfileClick = () => {
-    router.push('/profile/edit');
-  };
-
   const handleLoginClick = () => {
     router.push('/login');
   };
@@ -616,65 +601,7 @@ export default function Home() {
       )}
 
       {/* メニューボタン */}
-      <div className="fixed top-4 right-4 z-50">
-        <div className="relative">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-700 dark:text-gray-300">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-          </button>
-
-          {showMenu && (
-            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
-              <div className="py-1" role="menu" aria-orientation="vertical">
-                {isAuthenticated ? (
-                  <>
-                    <button
-                      onClick={handleProfileClick}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      role="menuitem"
-                    >
-                      プロフィール
-                    </button>
-                    <button
-                      onClick={() => setShowCommunityModal(true)}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      role="menuitem"
-                    >
-                      コミュニティ
-                    </button>
-                    <button
-                      onClick={() => router.push('/invite')}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      role="menuitem"
-                    >
-                      ユーザーを招待
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      role="menuitem"
-                    >
-                      ログアウト
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={handleLoginClick}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    role="menuitem"
-                  >
-                    ログイン
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+    
 
       <div className="max-w-2xl mx-auto p-4">
         {/* ハッシュタグタブ */}

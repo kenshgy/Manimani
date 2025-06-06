@@ -22,7 +22,7 @@ export default function Navigation() {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link href="/home" className="text-xl font-bold text-gray-800">
-                Manimani
+                まにまに
               </Link>
             </div>
           </div>

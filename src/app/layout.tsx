@@ -6,7 +6,7 @@ import ClientLayout from '@/app/ClientLayout';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Manimani - 日常のまにまに、心のまにまに',
+  title: 'まにまに - 日常のまにまに、心のまにまに',
   description: '日常のまにまに、心のまにまに',
 };
 

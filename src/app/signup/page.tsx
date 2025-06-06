@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import TermsModal from '@/app/components/TermsModal';
@@ -19,6 +19,32 @@ export default function SignUp() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // ログイン情報の確認とリダイレクト
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('セッション取得エラー:', error);
+        router.push('/');
+        return;
+      }
+
+      if (!session) {
+        router.push('/');
+        return;
+      }
+
+      // ログイン情報がある場合はメールアドレスを設定
+      setFormData(prev => ({
+        ...prev,
+        email: session.user.email || ''
+      }));
+    };
+
+    checkSession();
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -67,26 +93,24 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+      // パスワードの更新
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: formData.password
       });
 
-      if (authError) throw authError;
+      if (updateError) throw updateError;
 
-      if (authData.user) {
-        setSuccess(true);
-        // 3秒後にログインページに遷移
-        setTimeout(() => {
-          router.push('/login');
-        }, 3000);
-      }
+      setSuccess(true);
+      // 3秒後にダッシュボードに遷移
+      setTimeout(() => {
+        router.push('/profile/create');
+      }, 1000);
     } catch (error: unknown) {
-      console.error('登録エラー:', error);
+      console.error('パスワード更新エラー:', error);
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('登録に失敗しました。もう一度お試しください。');
+        setError('パスワードの更新に失敗しました。もう一度お試しください。');
       }
     } finally {
       setLoading(false);
@@ -105,25 +129,11 @@ export default function SignUp() {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                確認メールを送信しました
+                パスワードを設定しました
               </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                {formData.email} 宛に確認メールを送信しました。
-              </p>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                メールに記載されているリンクをクリックして、アカウントの確認を完了してください。
+                プロフィール作成画面に移動します...
               </p>
-              <div className="space-y-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  メールが届かない場合は、迷惑メールフォルダをご確認ください。
-                </p>
-                <a
-                  href="/login"
-                  className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
-                >
-                  ログインページへ移動
-                </a>
-              </div>
             </div>
           </div>
         </div>
@@ -158,6 +168,7 @@ export default function SignUp() {
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="example@example.com"
+                  readOnly
                 />
               </div>
 

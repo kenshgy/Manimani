@@ -26,6 +26,28 @@ export default function CreateProfile() {
   const [hashtags, setHashtags] = useState<Hashtag[]>([]);
   const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
 
+  // メールアドレスからユーザー名を設定
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          const username = user.email.split('@')[0];
+          setFormData(prev => ({
+            ...prev,
+            username: username
+          }));
+          // ユーザー名の重複チェックを実行
+          checkUsername(username);
+        }
+      } catch (error) {
+        console.error('Error fetching user email:', error);
+      }
+    };
+
+    fetchUserEmail();
+  }, []);
+
   // ユーザー名の重複チェック
   const checkUsername = async (username: string) => {
     if (!username) {

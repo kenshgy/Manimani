@@ -212,10 +212,6 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
 
     if (!newTweet.trim()) {
       setError('ツイート内容を入力してください');
@@ -320,10 +316,6 @@ export default function Home() {
     }
   };
 
-  const handleLoginClick = () => {
-    router.push('/login');
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -369,18 +361,11 @@ export default function Home() {
         )}
 
         {/* ハッシュタグタブ */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 sticky top-20 z-40">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
           <div className="relative">
             <div className="overflow-x-auto scrollbar-hide">
               <div className="flex space-x-2 p-4 min-w-max">
-                {!isAuthenticated ? (
-                  <button
-                    onClick={handleLoginClick}
-                    className="px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap"
-                  >
-                    ログインする
-                  </button>
-                ) : (
+                
                   <>
                     <button
                       onClick={() => {
@@ -411,11 +396,8 @@ export default function Home() {
                         </button>
                       ))}
                   </>
-                )}
               </div>
             </div>
-            {/* スクロールインジケーター */}
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white dark:from-gray-800 to-transparent pointer-events-none"></div>
           </div>
         </div>
 

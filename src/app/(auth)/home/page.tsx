@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 import { Hashtag, Tweet } from '@/types';
 import LinkifyIt from 'linkify-it';
 import { useAuth } from '@/hooks/useAuth';
@@ -62,10 +61,7 @@ export default function Home() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [userHashtags, setUserHashtags] = useState<string[]>([]);
-  const router = useRouter();
-
-  // 認証が必要なページとして設定
-  const { isAuthenticated, isLoading } = useAuth(true);
+  const { isAuthenticated } = useAuth(true);
 
   useEffect(() => {
     // 初期ロード時にセッションを確認
@@ -315,14 +311,6 @@ export default function Home() {
       setError('ツイートの投稿に失敗しました。もう一度お試しください。');
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-400">読み込み中...</div>
-      </div>
-    );
-  }
 
   if (!isAuthenticated) {
     return null; // useAuthフックがリダイレクトを処理するため、ここでは何も返さない

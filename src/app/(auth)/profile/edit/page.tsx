@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -65,7 +65,7 @@ export default function EditProfile() {
     }
   };
 
-  const checkUsername = async (username: string) => {
+  const checkUsername = useCallback(async (username: string) => {
     if (!username || username === originalUsername) {
       setUsernameError(null);
       return;
@@ -94,7 +94,7 @@ export default function EditProfile() {
     } finally {
       setIsCheckingUsername(false);
     }
-  };
+  }, [originalUsername]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -102,7 +102,7 @@ export default function EditProfile() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [formData.username]);
+  }, [formData.username, checkUsername]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

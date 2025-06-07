@@ -117,6 +117,18 @@ export default function Home() {
                             <p className="mt-1 text-gray-900 dark:text-white">
                               {tweet.content}
                             </p>
+                            {tweet.image_url && (
+                              <div className="mt-2 relative aspect-video w-full">
+                                <Image
+                                  src={tweet.image_url}
+                                  alt="投稿画像"
+                                  fill
+                                  sizes="(max-width: 768px) 100vw, 768px"
+                                  className="rounded-lg object-cover"
+                                  priority={index === currentIndex}
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

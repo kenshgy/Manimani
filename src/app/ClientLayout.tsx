@@ -56,6 +56,16 @@ export default function ClientLayout({
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navigation />
         <main>{children}</main>
+        <footer className="py-4 text-center text-sm text-gray-600 dark:text-gray-400">
+          <a
+            href="https://www.code4noto.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+          >
+            ©️Code For Noto
+          </a>
+        </footer>
       </div>
     </>
   );

@@ -100,6 +100,18 @@ export default function SignUp() {
 
       if (updateError) throw updateError;
 
+      // 招待ステータスの更新
+      const { error: inviteError } = await supabase
+        .from('invites')
+        .update({ status: 'accepted' })
+        .eq('email', formData.email)
+        .eq('status', 'pending');
+
+      if (inviteError) {
+        console.error('招待ステータス更新エラー:', inviteError);
+        // 招待ステータスの更新に失敗しても、パスワード更新は成功しているので続行
+      }
+
       setSuccess(true);
       // 3秒後にダッシュボードに遷移
       setTimeout(() => {

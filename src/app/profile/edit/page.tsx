@@ -267,7 +267,7 @@ export default function EditProfile() {
                 <input
                   type="text"
                   id="name"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-gray-900"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -285,7 +285,7 @@ export default function EditProfile() {
                     id="username"
                     className={`w-full px-4 py-2 border ${
                       usernameError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    } rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white`}
+                    } rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-gray-900`}
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     required

@@ -296,7 +296,7 @@ export default function Setting() {
                   id="newHashtag"
                   value={newHashtag}
                   onChange={(e) => setNewHashtag(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-gray-900"
                   placeholder="コミュニティ名を入力"
                   disabled={isAdding}
                 />

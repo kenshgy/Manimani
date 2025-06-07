@@ -427,7 +427,7 @@ export default function Home() {
                 value={newTweet}
                 onChange={(e) => setNewTweet(e.target.value)}
                 placeholder="いまどうしてる？"
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-gray-900 resize-none"
                 rows={3}
               />
               <div className="flex items-center justify-between">

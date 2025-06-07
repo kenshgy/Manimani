@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
 import Image from 'next/image';
+import { Hashtag } from '@/types';
 
-export default function EditProfile() {
+export default function CreateProfile() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     username: '',
@@ -21,52 +20,37 @@ export default function EditProfile() {
   });
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  const [originalUsername, setOriginalUsername] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const { isAuthenticated, isLoading: authLoading } = useAuth(true);
+  const [step, setStep] = useState<'profile' | 'community'>('profile');
+  const [hashtags, setHashtags] = useState<Hashtag[]>([]);
+  const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
 
+  // メールアドレスからユーザー名を設定
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProfile();
-    }
-  }, [isAuthenticated]);
-
-  const fetchProfile = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        setFormData({
-          name: data.name || '',
-          username: data.username || '',
-          prefecture: data.prefecture || '',
-          city: data.city || '',
-          street: data.street || '',
-          postal_code: data.postal_code || '',
-        });
-        setOriginalUsername(data.username || '');
-        setAvatarUrl(data.avatar_url);
-        setIsFirstLogin(!data.name && !data.username);
+    const fetchUserEmail = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          const username = user.email.split('@')[0];
+          setFormData(prev => ({
+            ...prev,
+            username: username
+          }));
+          // ユーザー名の重複チェックを実行
+          checkUsername(username);
+        }
+      } catch (error) {
+        console.error('Error fetching user email:', error);
       }
-    } catch (err) {
-      console.error('プロフィール取得エラー:', err);
-      setError('プロフィールの取得に失敗しました');
-    }
-  };
+    };
 
+    fetchUserEmail();
+  }, []);
+
+  // ユーザー名の重複チェック
   const checkUsername = async (username: string) => {
-    if (!username || username === originalUsername) {
+    if (!username) {
       setUsernameError(null);
       return;
     }
@@ -79,7 +63,7 @@ export default function EditProfile() {
         .eq('username', username)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== 'PGRST116') { // PGRST116はレコードが見つからない場合のエラー
         throw error;
       }
 
@@ -96,10 +80,11 @@ export default function EditProfile() {
     }
   };
 
+  // ユーザー名の変更を監視
   useEffect(() => {
     const timer = setTimeout(() => {
       checkUsername(formData.username);
-    }, 500);
+    }, 500); // 500msのディレイを設定
 
     return () => clearTimeout(timer);
   }, [formData.username]);
@@ -107,7 +92,7 @@ export default function EditProfile() {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB制限
         setError('画像サイズは5MB以下にしてください');
         return;
       }
@@ -143,7 +128,7 @@ export default function EditProfile() {
         throw new Error('ユーザーが見つかりません');
       }
 
-      let newAvatarUrl = avatarUrl;
+      let avatarUrl = '/logo.svg';
 
       if (selectedImage) {
         try {
@@ -162,7 +147,7 @@ export default function EditProfile() {
             .from('images')
             .getPublicUrl(fileName);
 
-          newAvatarUrl = publicUrl;
+          avatarUrl = publicUrl;
         } catch (error) {
           console.error('画像処理エラー:', error);
           throw new Error('画像の処理に失敗しました');
@@ -171,40 +156,159 @@ export default function EditProfile() {
 
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
+        .insert({
+          id: user.id,
           name: formData.name,
           username: formData.username,
+          email: user.email,
+          avatar_url: avatarUrl,
           prefecture: formData.prefecture,
           city: formData.city,
           street: formData.street,
           postal_code: formData.postal_code,
-          avatar_url: newAvatarUrl,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+        });
 
       if (profileError) {
         throw profileError;
       }
 
-      router.push('/home');
+      setStep('community');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'プロフィールの更新に失敗しました');
+      setError(err instanceof Error ? err.message : 'プロフィールの作成に失敗しました');
     } finally {
       setLoading(false);
     }
   };
 
-  if (authLoading) {
+  const handleCommunityComplete = async (selectedHashtags: string[]) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      if (selectedHashtags.length > 0) {
+        const { error } = await supabase
+          .from('user_hashtags')
+          .insert(
+            selectedHashtags.map(hashtagId => ({
+              user_id: user.id,
+              hashtag_id: hashtagId
+            }))
+          );
+
+        if (error) throw error;
+      }
+
+      router.push('/home');
+    } catch (error) {
+      console.error('Error joining communities:', error);
+      setError('コミュニティへの参加に失敗しました');
+    }
+  };
+
+  const handleCommunitySkip = () => {
+    router.push('/home');
+  };
+
+  const fetchHashtags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hashtags')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setHashtags(data || []);
+    } catch (error) {
+      console.error('Error fetching hashtags:', error);
+      setError('ハッシュタグの取得に失敗しました');
+    }
+  };
+
+  const handleJoinCommunity = (hashtagId: string) => {
+    setSelectedHashtags(prev => [...prev, hashtagId]);
+  };
+
+  const handleLeaveCommunity = (hashtagId: string) => {
+    setSelectedHashtags(prev => prev.filter(id => id !== hashtagId));
+  };
+
+  useEffect(() => {
+    if (step === 'community') {
+      fetchHashtags();
+    }
+  }, [step]);
+
+  if (step === 'community') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-400">読み込み中...</div>
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <div className="container mx-auto px-4 py-24">
+          <div className="max-w-md mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                コミュニティに参加
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                興味のあるコミュニティを選択してください（任意）
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+              <div className="space-y-4">
+                {error && (
+                  <div className="rounded-md bg-red-50 p-4">
+                    <div className="text-sm text-red-700">{error}</div>
+                  </div>
+                )}
+
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {hashtags.map((hashtag) => (
+                    <div
+                      key={hashtag.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    >
+                      <span className="text-gray-900 dark:text-white">
+                        {hashtag.name}
+                      </span>
+                      {selectedHashtags.includes(hashtag.id) ? (
+                        <button
+                          onClick={() => handleLeaveCommunity(hashtag.id)}
+                          className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                        >
+                          退出
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleJoinCommunity(hashtag.id)}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                        >
+                          参加
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex space-x-4 pt-4">
+                  <button
+                    onClick={handleCommunitySkip}
+                    className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+                  >
+                    スキップ
+                  </button>
+                  <button
+                    onClick={() => handleCommunityComplete(selectedHashtags)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+                  >
+                    完了
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
 
   return (
@@ -213,10 +317,10 @@ export default function EditProfile() {
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              プロフィール編集
+              プロフィール作成
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
-              プロフィール情報を編集してください
+              プロフィール情報を入力してください
             </p>
           </div>
 
@@ -231,7 +335,7 @@ export default function EditProfile() {
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative w-32 h-32">
                   <Image
-                    src={imagePreview || avatarUrl || '/logo.svg'}
+                    src={imagePreview || '/logo.svg'}
                     alt="プロフィール画像"
                     fill
                     sizes="128px"
@@ -307,43 +411,13 @@ export default function EditProfile() {
                 )}
               </div>
 
-              <div className="flex justify-end space-x-4">
-                {isFirstLogin ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => router.push('/home')}
-                      className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
-                    >
-                      スキップ
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading || !!usernameError}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      完了
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => router.push('/home')}
-                      className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
-                    >
-                      変更をキャンセル
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading || !!usernameError}
-                      className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      変更を適用
-                    </button>
-                  </>
-                )}
-              </div>
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+                disabled={loading || !!usernameError}
+              >
+                {loading ? '作成中...' : 'プロフィールを作成'}
+              </button>
             </form>
           </div>
         </div>
